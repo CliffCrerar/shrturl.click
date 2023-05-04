@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Nabla&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.css" />
+    <link rel="stylesheet" href="/icons/bootstrap-icons.css" />
+    <script src="/bootstrap/js/bootstrap.js"></script>
+    <title>shrtUrl.click</title>
+    <style>
+        html,
+        body {
+            min-height: 100vh;
+            height: auto;
+        }
+
+        .brand-text {
+            font-family: 'Nabla', sans-serif;
+        }
+
+        .secondary {
+            background: #adb4bf;
+        }
+    </style>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <nav class="navbar navbar-expand-lg bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#" style="font-family: nabla;">shrtUrl.click</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
+                aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <div class="navbar-nav">
+                    <a class="nav-link active" aria-current="page" href="#">Home</a>
+                    <a class="nav-link disabled">About</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <header class="container">
+        <div class="my-5 py-3 bg-primary rounded shadow-sm">
+            <h1 class="display-1 brand-text text-center">shortUrl.click</h1>
+        </div>
+    </header>
+    <main class="container">
+        <div class="card">
+            <div class="card-header fw-light">
+                Declutter your colaboration space with shrturl.click
+            </div>
+            <div class="card-body">
+                <h2 class="card-title">Paste your long url in the input box:</h2>
+                <form class="my-3">
+                    <div class="w-75 m-auto">
+                        <textarea id="longUrl" class="form-control mb-3" rows="3" name="longUrl"
+                            placeholder="long url goes here"></textarea>
+                        <button type="button" id="convertBtn" type="button" class="btn btn-lg btn-primary">
+                            shrturlify
+                            <i class="bi bi-magic"></i>
+                        </button>
+                    </div>
+                </form>
+                <div class="w-75 m-auto">
+                    <hr>
+                    <div id="shortUrl">
+                        <small class="text-center">Converted to shrturl:</small>
+                        <h3>
+                            <span class="rounded-pill badge text-bg-secondary">
+                                <span id="shortUrlOut" class="mx-2">shrturl</span>
+                                <span hidden id="copyToClipboard" class="mx-1">
+                                    <i class="bi bi-clipboard-fill"></i>
+                                    <i class="bi bi-clipboard-check-fill"></i>
+                                </span>
+                            </span>
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="mt-auto">
+        <div class="bg-secondary p-3 text-center">
+
+            <img class="rounded"
+                src="https://s3.eu-west-2.amazonaws.com/cdn-cloudflare.ga/assets/ia/IA_shortlogo_white_blackbg-01x.png"></img>
+            <div> <a class="text-black decoration-none" href="www.infinityarc.net" target="_blank"> Infinity Arc</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const byId = (id) => document.getElementById(id);
+        const convertBtn = byId('convertBtn');
+        const longUrl = byId('longUrl');
+        const shortUrl = byId('shortUrl');
+        const shortUrlOut = byId('shortUrlOut');
+        const copyToClipboard = byId('copyToClipboard');
+
+        shortUrl.style.display = 'none';
+
+        function convertUrl() {
+            return fetch('/shorten', {
+                method: 'POST',
+                body: JSON.stringify({
+                    originalUrl: longUrl.value
+                }),
+                headers: {
+                    "Content-Type": "application/json",
+                    // 'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            })
+        }
+
+        convertBtn.addEventListener('click', () => {
+            if(longUrl.value == '') return;
+            convertUrl().catch().then(res => res.json()).then(body => {
+                shortUrl.style.display = 'block'
+                shortUrlOut.innerText = origin + '/' + body.shortId;
+                console.log(body);
+
+            })
+        })
+
+    </script>
+
+</body>
+
+</html>

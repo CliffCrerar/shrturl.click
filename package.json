@@ -1,0 +1,36 @@
+{
+  "name": "shrturl.click",
+  "version": "0.0.1-alpha",
+  "description": "Create short urls",
+  "main": "app.js",
+  "scripts": {
+    "test": "test",
+    "start": "node app",
+    "dev": "nodemon app"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CliffCrerar/shrturl.click.git"
+  },
+  "keywords": [
+    "shorturl",
+    "nodejs",
+    "express",
+    "shrturl.click"
+  ],
+  "author": "{ name: Cliff Crerar, email: cliff.crerar@gmail.com }",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/CliffCrerar/shrturl.click/issues"
+  },
+  "homepage": "https://github.com/CliffCrerar/shrturl.click#readme",
+  "dependencies": {
+    "bootstrap": "^5.3.0-alpha3",
+    "bootstrap-icons": "^1.10.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "mongoose": "^7.1.0",
+    "nodemon": "^2.0.22",
+    "shortid": "^2.2.16"
+  }
+}
