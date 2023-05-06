@@ -63,7 +63,7 @@ jobs:
     steps:
     - name: 'Deploy to Azure Container Registry ACR IA'
       id: deploy-to-webapp
-    - uses: azure/docker-login@v1
+      uses: azure/docker-login@v1
       with:
         login-server: acria.azurecr.io
         username: ${{ secrets.REGISTRY_USERNAME }}
