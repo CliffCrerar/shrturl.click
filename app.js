@@ -1,11 +1,10 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
 const shortid = require("shortid");
 const path = require('path');
 const fs = require('fs');
-
-dotenv.config();
+const appInsightsClient = require('./lib/app-insights');
 
 const PORT = process.env['PORT'] || 3000
 
@@ -23,7 +22,7 @@ app.use('/icons', express.static(path.join(__dirname, 'node_modules', 'bootstrap
 
 // Pages
 
-
+const str = (param) => JSON.stringify(param);
 
 // Api section
 
@@ -40,6 +39,19 @@ const urlSchema = new mongoose.Schema({
 
 const Url = mongoose.model("Url", urlSchema);
 
+app.all('*', (req,res,next)=>{
+  appInsightsClient.trackNodeHttpRequest({request: req, response: res});
+  const {method,path,params,query,body} = req;
+  const toLog = `${req.method} - ${res.statusCode}: ${req.path} - PARAMS: ${str(params)} - QUERY: ${str(query)} BODY: ${str(body)}`;
+  console.log(toLog);
+  next();
+})
+
+app.get('/env', (req,res)=>{
+  let environment = process.env['NODE_ENV'] ?? 'production';
+  res.type('json').send({environment});
+}) 
+
 app.post("/shorten", async (req, res) => {
   try {
     const { originalUrl } = req.body;
@@ -55,8 +67,8 @@ app.post("/shorten", async (req, res) => {
 
     res.json({ shortId });
   } catch (err) {
-    res.status(500).type('text').write(err);
-    res.end();
+    console.error(err);
+    res.status(500).type('json').send({error: err.message});
   }
 
 });
@@ -72,8 +84,8 @@ app.get("/:shortId", async (req, res) => {
 
     res.redirect(url.originalUrl);
   } catch (err) {
-    res.status(500).type('text').write(err);
-    res.end();
+    console.error(err);
+    res.status(500).type('json').send({error: err.message});
   }
 });
 

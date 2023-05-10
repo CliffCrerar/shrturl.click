@@ -13,6 +13,9 @@
     <link rel="stylesheet" href="/bootstrap/css/bootstrap.css" />
     <link rel="stylesheet" href="/icons/bootstrap-icons.css" />
     <script src="/bootstrap/js/bootstrap.js"></script>
+    <script>
+
+    </script>
     <title>shrtUrl.click</title>
     <style>
         html,
@@ -27,6 +30,12 @@
 
         .secondary {
             background: #adb4bf;
+        }
+        #shortUrlError {
+            background: salmon;
+            color: maroon;
+            border-radius: 7px;
+            padding: 10px;
         }
     </style>
 </head>
@@ -61,12 +70,19 @@
                 <h2 class="card-title">Paste your long url in the input box:</h2>
                 <form class="my-3">
                     <div class="w-75 m-auto">
-                        <textarea id="longUrl" class="form-control mb-3" rows="3" name="longUrl"
-                            placeholder="long url goes here"></textarea>
+                        <input id="longUrl"
+                        type="url" name="url"
+                        placeholder="https://example.com"
+                        pattern="https://.*" size="30"
+                        class="form-control mb-3" rows="3"
+                        required
+                        ></input>
                         <button type="button" id="convertBtn" type="button" class="btn btn-lg btn-primary">
                             shrturlify
                             <i class="bi bi-magic"></i>
                         </button>
+                        <small id="noUrlValidation" style="color:red; display: none">Enter a link in the text box to shorturlify it</small>
+                        <small id="urlNotValidValidation" style="color:red; display: none">Please insert a valid URL in the textbox</small>
                     </div>
                 </form>
                 <div class="w-75 m-auto">
@@ -74,18 +90,42 @@
                     <div id="shortUrl">
                         <small class="text-center">Converted to shrturl:</small>
                         <h3>
-                            <span class="rounded-pill badge text-bg-secondary">
-                                <span id="shortUrlOut" class="mx-2">shrturl</span>
-                                <span hidden id="copyToClipboard" class="mx-1">
+                            <span class="rounded-pill badge text-bg-light">
+                                <span id="shortUrlOut" class="mx-2 overflow-hidden">shrturl</span>
+                                <span id="copyToClipboard" class="mx-1">
                                     <i class="bi bi-clipboard-fill"></i>
-                                    <i class="bi bi-clipboard-check-fill"></i>
+                                    <i class="text-success bi bi-clipboard-check-fill"></i>
                                 </span>
                             </span>
                         </h3>
                     </div>
+                    <div id="shortUrlErrordevelopment">
+                        <p id="errorCode"></p>
+                        <pre>
+                            <code id="errorOut"></code>
+                        </pre>
+                    </div>
+                    <div style="display: none" id="shortUrlErrorproduction">
+                        <h2>Whoops!!!</h2>
+                        <p>Something has gone wrong but we azure you we are working on fixing it.
+                            <br> Check back later and the service will be running again.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+              <div class="toast-header">
+                <img src="..." class="rounded me-2" alt="...">
+                <strong class="me-auto">ShrtUrl.Click</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+              </div>
+              <div class="toast-body">
+                Copied to clipboard
+              </div>
+            </div>
+          </div>
     </main>
     <footer class="mt-auto">
         <div class="bg-secondary p-3 text-center">
@@ -97,39 +137,131 @@
         </div>
     </footer>
 
+
+
     <script>
-        const byId = (id) => document.getElementById(id);
-        const convertBtn = byId('convertBtn');
-        const longUrl = byId('longUrl');
-        const shortUrl = byId('shortUrl');
-        const shortUrlOut = byId('shortUrlOut');
-        const copyToClipboard = byId('copyToClipboard');
-
-        shortUrl.style.display = 'none';
-
-        function convertUrl() {
-            return fetch('/shorten', {
-                method: 'POST',
-                body: JSON.stringify({
-                    originalUrl: longUrl.value
-                }),
-                headers: {
-                    "Content-Type": "application/json",
-                    // 'Content-Type': 'application/x-www-form-urlencoded',
-                },
-            })
-        }
-
-        convertBtn.addEventListener('click', () => {
-            if(longUrl.value == '') return;
-            convertUrl().catch().then(res => res.json()).then(body => {
-                shortUrl.style.display = 'block'
-                shortUrlOut.innerText = origin + '/' + body.shortId;
-                console.log(body);
+            fetch('/env')
+        .catch(err => {
+            console.error('ENVIRONMENT ERROR:', err);
+        })
+        .then(res=>{
+            res.json().then(({environment}) => {
+                window.environment = environment;
+                start();
 
             })
         })
+     
+        function start() {
+            console.log(window.environment)
+            const byId = (id) => document.getElementById(id);
+            const convertBtn = byId('convertBtn');
+            const toast = byId('toast');
+            const longUrl = byId('longUrl');
+            const shortUrl = byId('shortUrl');
+            const shortUrlOut = byId('shortUrlOut');
+            const shortUrlError = byId('shortUrlError'+ window.environment);
+            const copyToClipboard = byId('copyToClipboard');
+            const errorCode = byId('errorCode');
+            const errorOut = byId('errorOut');
+            const noUrlValidation = byId('noUrlValidation');
+            const urlNotValidValidation = byId('urlNotValidValidation');
+            const copyToClipboardButtonState = {
+                notClicked() {
+                    copyToClipboard.children[0].style.display = 'initial';
+                    copyToClipboard.children[1].style.display = 'none';
+                },
+                clicked() {
+                    copyToClipboard.children[0].style.display = 'none';
+                    copyToClipboard.children[1].style.display = 'initial';
+                }
+            }
 
+            shortUrl.style.display = 'none';
+            shortUrlError.style.display = 'none';
+            copyToClipboardButtonState.notClicked();
+
+            function convertUrl() {
+                return fetch('/shorten', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        originalUrl: longUrl.value
+                    }),
+                    headers: {
+                        "Content-Type": "application/json",
+                        // 'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                })
+            }
+
+            function copyToClipBoard() {
+                
+
+                // Select the text field
+
+                // Copy the text inside the text field
+                navigator.clipboard.writeText(shortUrlOut.innerText);
+
+                // Alert the copied text
+                alert("Copied the text: " + shortUrlOut.innerText);
+            }
+
+            function toastToCopiedToClipboard() {
+                const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toast)
+                toastBootstrap.show();
+            }
+
+            copyToClipboard.addEventListener('click', ()=>{
+                copyToClipboardButtonState.clicked();
+                copyToClipBoard();
+                toastToCopiedToClipboard();
+            })
+
+
+
+            convertBtn.addEventListener('click', () => {
+                console.log(longUrl.validity.valid)
+                noUrlValidation.style.display = 'none';
+                urlNotValidValidation.style.display = 'none';
+                if(!longUrl.validity.valid) {
+                    if(longUrl.validity.patternMismatch) {
+                        urlNotValidValidation.style.display = 'block';
+                    }
+                    if(longUrl.validity.valueMissing) {
+                        noUrlValidation.style.display = 'block';
+                    }
+                    return;
+                } 
+                convertUrl().catch(responseError => {
+                    console.error('RESPONSE ERROR:', responseError);
+                }).then(res => { 
+                    console.log(res);
+                    if(res.ok) {
+                        res.json()
+                            .catch(conversionError=>{
+                                console.error('CONVERSION ERROR:', conversionError);
+                            })
+                            .then(body => {
+                                shortUrl.style.display = 'block'
+                                shortUrlOut.innerText = origin + '/' + body.shortId;
+                                console.log(body);
+
+                            });
+                    } else {
+                        errorCode.innerText = 'HttpError: ' + res.status,
+                        shortUrlError.style.display = 'block'
+                        res.json().then(error=>{
+                            errorOut.innerText =  error.error;
+                        })
+                    }
+                    
+                })
+
+            })
+
+
+
+        }
     </script>
 
 </body>
